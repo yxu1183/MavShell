@@ -39,10 +39,18 @@
 
 #define MAX_NUM_ARGUMENTS 5     // Mav shell only supports five arguments
 
+#define MAX_HIST_COMMAND 15    // The maximum history commands to display
+
+#define MAX_PID COMMAND 15    // The maximum showpids command tp list the PIDS
+
 int main()
 {
 
   char * cmd_str = (char*) malloc( MAX_COMMAND_SIZE );
+
+
+  pid_t pid;
+  int command_tracker = 0;
 
   while( 1 )
   {
@@ -72,6 +80,8 @@ int main()
     // the correct amount at the end
     char *working_root = working_str;
 
+    char command_history[MAX_HIST_COMMAND][MAX_COMMAND_SIZE];
+
     // Tokenize the input stringswith whitespace used as the delimiter
     while ( ( (arg_ptr = strsep(&working_str, WHITESPACE ) ) != NULL) &&
               (token_count<MAX_NUM_ARGUMENTS))
@@ -84,15 +94,78 @@ int main()
         token_count++;
     }
 
-    // Now print the tokenized input as a debug check
-    // \TODO Remove this code and replace with your shell functionality
+    /*********************
+    *                     *
+    *                     *
+    * Shell Functionality *
+    *                     *
+    *                     *
+     ********************/
 
-    int token_index  = 0;
-    for( token_index = 0; token_index < token_count; token_index ++ )
+    if(token[0]!=NULL)
     {
-      printf("token[%d] = %s\n", token_index, token[token_index] );
-    }
+      if(command_tracker<MAX_HIST_COMMAND)
+      {
+        strcpy(command_history[command_tracker],cmd_str);
+        command_tracker++;
+      }
+      else
+      {
+        int row,column;
+        for(row = 0; row<MAX_HIST_COMMAND; row++)
+        {
+          for(column=0;column<MAX_COMMAND_SIZE;column++)
+          {
+            command_history[row][column]=command_history[row+1][column];
+          }
+        }
+        strcpy(command_history[MAX_HIST_COMMAND-1],cmd_str);
+        command_tracker++;
+      }
+      if((strcmp("quit",token[0])==0) || (strcmp("exit",token[0])==0))
+      {
+        return 0;
+      }
+      else if(strcmp("history",token[0])==0)
+      {
+        int i;
+        if(command_tracker<=MAX_HIST_COMMAND)
+        {
+          for(i= 0; i<command_tracker; i++)
+          {
+            printf("%d: %s",i+1,command_history[i]);
+          }
+        }
+        else
+        {
+          for(i= 0; i<MAX_HIST_COMMAND; i++)
+          {
+            printf("%d: %s",i+1,command_history[i]);
+          }
+        }
+      }
+      else if(strcmp("listpids",token[0])==0)
+      {
 
+      }
+
+      else
+      {
+        int token_index  = 0;
+        for( token_index = 0; token_index < token_count-1; token_index ++ )
+        {
+          printf("%s ",token[token_index]);
+        }
+        printf(": Command not found.");
+        printf("\n");
+      }
+    }
+    //pid = fork();
+
+    if(pid == 0)
+    {
+
+    }
     free( working_root );
 
   }
