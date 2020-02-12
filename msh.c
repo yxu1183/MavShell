@@ -37,11 +37,11 @@
 
 #define MAX_COMMAND_SIZE 255    // The maximum command-line size
 
-#define MAX_NUM_ARGUMENTS 5     // Mav shell only supports five arguments
+#define MAX_NUM_ARGUMENTS 10     // Mav shell only supports ten arguments
 
 #define MAX_HIST_COMMAND 15    // The maximum history commands to display
 
-#define MAX_PID COMMAND 15    // The maximum showpids command tp list the PIDS
+#define MAX_PID_COMMAND 15    // The maximum showpids command tp list the PIDS
 
 int main()
 {
@@ -81,6 +81,7 @@ int main()
     char *working_root = working_str;
 
     char command_history[MAX_HIST_COMMAND][MAX_COMMAND_SIZE];
+    int command_pid[MAX_PID_COMMAND];
 
     // Tokenize the input stringswith whitespace used as the delimiter
     while ( ( (arg_ptr = strsep(&working_str, WHITESPACE ) ) != NULL) &&
@@ -101,9 +102,9 @@ int main()
     *                     *
     *                     *
      ********************/
-
+    
     if(token[0]!=NULL)
-    {
+    { 
       if(command_tracker<MAX_HIST_COMMAND)
       {
         strcpy(command_history[command_tracker],cmd_str);
@@ -122,6 +123,7 @@ int main()
         strcpy(command_history[MAX_HIST_COMMAND-1],cmd_str);
         command_tracker++;
       }
+   
       if((strcmp("quit",token[0])==0) || (strcmp("exit",token[0])==0))
       {
         return 0;
@@ -129,45 +131,73 @@ int main()
       else if(strcmp("history",token[0])==0)
       {
         int i;
-        if(command_tracker<=MAX_HIST_COMMAND)
-        {
-          for(i= 0; i<command_tracker; i++)
-          {
-            printf("%d: %s",i+1,command_history[i]);
-          }
-        }
-        else
+        if(command_tracker>MAX_HIST_COMMAND)
         {
           for(i= 0; i<MAX_HIST_COMMAND; i++)
           {
             printf("%d: %s",i+1,command_history[i]);
           }
         }
+        else
+        {
+          for(i= 0; i<command_tracker; i++)
+          {
+            printf("%d: %s",i+1,command_history[i]);
+          }
+        } 
+        continue;
       }
       else if(strcmp("listpids",token[0])==0)
       {
-
+        continue;
       }
+      else if(strcmp("cd",token[0])==0)
+      {
+        chdir(token[1]);
+        continue;
+      }
+    }
+    pid = fork();
 
+    if(pid == -1)
+    {
+      perror("Fork Failed.");
+      exit(EXIT_FAILURE);
+    }
+
+    else if(pid == 0)
+    {
+      int a = 0;//will do history !n
+      if(a==1)
+      { 
+        fflush(NULL);
+       _exit(1);
+      }
       else
       {
         int token_index  = 0;
-        for( token_index = 0; token_index < token_count-1; token_index ++ )
+        for(token_index = 0; token_index< token_count-1; token_index ++)
         {
-          printf("%s ",token[token_index]);
+          int ret = execlp(token[token_index],NULL);
+          if(ret==-1)
+          {
+            printf("%s ",token[token_index]);
+          }
         }
-        printf(": Command not found.");
+        printf(":Command not found.");
         printf("\n");
+        fflush(NULL);
+       _exit(1);
       }
+      
     }
-    //pid = fork();
 
-    if(pid == 0)
-    {
-
+    else
+    { 
+      int status;
+      wait(&status);  
     }
     free( working_root );
-
   }
   return 0;
 }
