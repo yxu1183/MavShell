@@ -172,10 +172,10 @@ int main()
     }
     else if (strcmp("cd", token[0]) == 0)
     {
-        if(chdir(token[1])==-1)
-        {
+      if (chdir(token[1]) == -1)
+      {
         printf("%s: Directory not found.\n", token[1]);
-        }
+      }
     }
     else
     {
@@ -211,14 +211,15 @@ int main()
             }
             if (strcmp(history_token[0], "history") == 0)
             {
-              print_history(command_tracker, MAX_HIST_COMMAND);
+              print_history(command_tracker-1,MAX_HIST_COMMAND-1);
+              printf("\n");
             }
             else if (strcmp(history_token[0], "cd") == 0)
             {
-                if(chdir(history_token[1])==-1)
-                {
-                  printf("%s: Directory not found.\n",history_token[1]);
-                }
+              if (chdir(history_token[1]) == -1)
+              {
+                printf("%s: Directory not found.\n", history_token[1]);
+              }
             }
             else if (strcmp(history_token[0], "showpids") == 0)
             {
