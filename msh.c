@@ -1,24 +1,7 @@
-// The MIT License (MIT)
-//
-// Copyright (c) 2016, 2017 Trevor Bakker
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+/*
+  Name: Yunika Upadhayaya
+  ID: 1001631183
+*/
 
 #define _GNU_SOURCE
 
@@ -30,10 +13,12 @@
 #include <string.h>
 #include <signal.h>
 
-#define WHITESPACE " \t\n" // We want to split our command line up into tokens \
-                           // so we need to define what delimits our tokens.   \
-                           // In this case  white space                        \
-                           // will separate the tokens on our command line
+#define WHITESPACE " \t\n" /*                                                  \
+                              We want to split our command line up into tokens \
+                              so we need to define what delimits our tokens.   \
+                              In this case  white space                        \
+                              will separate the tokens on our command line     \
+                            */
 
 #define MAX_COMMAND_SIZE 255 // The maximum command-line size
 
@@ -43,12 +28,19 @@
 
 #define MAX_PID_COMMAND 15 // The maximum showpids command tp list the PIDS
 
+//Declaring global variable for history and showpids functionality
 char command_history[MAX_HIST_COMMAND][MAX_COMMAND_SIZE];
 int command_pid[MAX_PID_COMMAND];
 char *history_token[MAX_COMMAND_SIZE];
 int command_tracker = 0;
 int pids_tracker = 0;
 
+/*
+  print_history prints latest 15 commands from the history.
+  Takes in the total number of commands entered and max number of
+  history commands that needs to be printed as parameters.
+  Returns nothing.
+*/
 void print_history(int tracker, int command_number)
 {
   int i;
@@ -68,6 +60,13 @@ void print_history(int tracker, int command_number)
   }
 }
 
+/*
+  print_pids prints latest 15 process IDs after
+  child process is created using fork().
+  Takes in total number of commands entered in the
+  child process as a parameter.
+  Returns nothing.
+*/
 void print_pids(int tracker)
 {
   int i;
@@ -89,11 +88,13 @@ int main()
     // Print out the msh prompt
     printf("msh> ");
 
-    // Read the command from the commandline.  The
-    // maximum command that will be read is MAX_COMMAND_SIZE
-    // This while command will wait here until the user
-    // inputs something since fgets returns NULL when there
-    // is no input
+    /*
+       Read the command from the commandline.  The
+       maximum command that will be read is MAX_COMMAND_SIZE
+       This while command will wait here until the user
+       inputs something since fgets returns NULL when there
+       is no input
+    */
     while (!fgets(cmd_str, MAX_COMMAND_SIZE, stdin))
       ;
 
@@ -102,15 +103,19 @@ int main()
 
     int token_count = 0;
 
-    // Pointer to point to the token
-    // parsed by strsep
+    /*
+       Pointer to point to the token
+       parsed by strsep
+    */
     char *arg_ptr;
 
     char *working_str = strdup(cmd_str);
 
-    // we are going to move the working_str pointer so
-    // keep track of its original value so we can deallocate
-    // the correct amount at the end
+    /*
+       we are going to move the working_str pointer so
+       keep track of its original value so we can deallocate
+       the correct amount at the end
+    */
     char *working_root = working_str;
 
     // Tokenize the input stringswith whitespace used as the delimiter
@@ -133,6 +138,12 @@ int main()
     *                     *
      ********************/
 
+    /*
+      Copy the input commands into the history array except for NULL command.
+      Copy the first 15 commands as it is.
+      After the commands hit 15, shift one position in array with new value.
+      Get rid of the old command and add new command into the array.
+    */
     if (token[0] != NULL)
     {
       if (command_tracker < MAX_HIST_COMMAND)
@@ -154,22 +165,48 @@ int main()
         command_tracker++;
       }
     }
+
+    /*
+      Avoid sgementation fault.
+      Keep on prompting "msh", accepting new line of input.
+    */
     if (token[0] == NULL)
     {
       continue;
     }
+
+    /*
+      Peacefully exit the program with zero status,
+      if user enters "quit" or "exit".
+    */
     else if ((strcmp("quit", token[0]) == 0) || (strcmp("exit", token[0]) == 0))
     {
       return 0;
     }
+
+    /*
+      Print the latest 15 history commands,
+      if user enters "history" using print_history function.
+    */
     else if (strcmp("history", token[0]) == 0)
     {
       print_history(command_tracker, MAX_HIST_COMMAND);
     }
+
+    /*
+      Print the latest 15 process IDs in the child process,
+      if user enters "showpids".
+    */
     else if (strcmp("showpids", token[0]) == 0)
     {
       print_pids(pids_tracker);
     }
+
+    /*
+      Execute "cd" command in linux.
+      "cd ~" does not execute.
+      If chdir() fails, print otherwise.
+    */
     else if (strcmp("cd", token[0]) == 0)
     {
       if (chdir(token[1]) == -1)
@@ -177,21 +214,32 @@ int main()
         printf("%s: Directory not found.\n", token[1]);
       }
     }
+
+    //Create a child process using fork.
     else
     {
       pid = fork();
+
+      //Process was not created. fork() didn't work.
       if (pid == -1)
       {
         perror("Fork Failed.");
         exit(EXIT_FAILURE);
       }
 
+      //We are in the child process.
       else if (pid == 0)
       {
+        /*
+          Execute the "!n" history functionality.
+          Execute nth command in the history when entered !n.
+        */
         if (cmd_str[0] == '!')
         {
+          //Change the string "n" into integer n using atoi()
           int index = atoi(&cmd_str[1]);
 
+          //Only account for the history commands entered upto 15th index
           if (index > command_tracker - 1)
           {
             printf("Command not in history.\n");
@@ -199,45 +247,77 @@ int main()
             _exit(1);
           }
 
+          /*
+            Tokenize the command in the nth index of the command history.
+            So, that we can pass it onto to the execv() to execute the command.
+          */
           else
           {
             int i = 0;
             command_history[index - 1][strlen(command_history[index - 1]) - 1] = '\0';
+
             char *h = strtok(command_history[index - 1], " ");
             while (h != NULL)
             {
               history_token[i++] = h;
               h = strtok(NULL, " ");
             }
-            if (strcmp(history_token[0], "history") == 0)
+          }
+
+          //Print the history commands, till nth index.
+          if (strcmp(history_token[0], "history") == 0)
+          {
+            command_history[index - 1][strlen(command_history[index - 1])] = '\n';
+            print_history(command_tracker - 1, MAX_HIST_COMMAND - 1);
+          }
+
+          /*
+            Execute chdir(), to change the directory (cd) for nth index.
+            Does not execute "cd ~".
+            If no directory found, print otherwise.
+          */
+          else if (strcmp(history_token[0], "cd") == 0)
+          {
+            if (chdir(history_token[1]) == -1)
             {
-              command_history[index - 1][strlen(command_history[index - 1])] = '\n';
-              print_history(command_tracker - 1, MAX_HIST_COMMAND - 1);
+              printf("%s: Directory not found.\n", history_token[1]);
             }
-            else if (strcmp(history_token[0], "cd") == 0)
+          }
+
+          //Print the latest process IDs, till nth index.
+          else if (strcmp(history_token[0], "showpids") == 0)
+          {
+            print_pids(pids_tracker);
+          }
+
+          /*
+            Supports and executes commands entered in nth index.
+            Searches in the following path order:
+            Current working directory
+            /usr/local/bin
+            /usr/bin
+            /bin
+          */
+          else
+          {
+            int ret;
+            ret = execvp(history_token[0], history_token);
+            if (ret == -1)
             {
-              if (chdir(history_token[1]) == -1)
-              {
-                printf("%s: Directory not found.\n", history_token[1]);
-              }
-            }
-            else if (strcmp(history_token[0], "showpids") == 0)
-            {
-              print_pids(pids_tracker);
-            }
-            else
-            {
-              int ret;
-              ret = execvp(history_token[0], history_token);
-              if (ret == -1)
-              {
-                printf("%s: Command not found.\n", history_token[0]);
-              }
+              printf("%s: Command not found.\n", history_token[0]);
             }
           }
           fflush(NULL);
           _exit(1);
         }
+        /*
+          Executes shell supporting commands entered.
+          Searches in the following path order:
+          Current working directory
+          /usr/local/bin
+          /usr/bin
+          /bin
+        */
         else
         {
           int ret = execvp(token[0], token);
@@ -249,8 +329,13 @@ int main()
           _exit(1);
         }
       }
+      //We are in the parent process.
       else
       {
+        /*
+          Update the pids array with the latest 15 process IDs
+          after fork() is called and child process is created.
+        */
         int i = 0;
         if (pids_tracker == MAX_PID_COMMAND)
         {
@@ -262,10 +347,16 @@ int main()
         }
         command_pid[pids_tracker] = pid;
         pids_tracker++;
+
+        //Wait and terminate only after child process terminates.
         int status;
         wait(&status);
       }
     }
+    /*
+      Free the dynamically allocated memory that was reserved for us.
+      Avoid memory leak.
+    */
     free(working_root);
   }
   return 0;
