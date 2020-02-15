@@ -211,8 +211,8 @@ int main()
             }
             if (strcmp(history_token[0], "history") == 0)
             {
-              print_history(command_tracker-1,MAX_HIST_COMMAND-1);
-              printf("\n");
+              command_history[index - 1][strlen(command_history[index - 1])] = '\n';
+              print_history(command_tracker - 1, MAX_HIST_COMMAND - 1);
             }
             else if (strcmp(history_token[0], "cd") == 0)
             {
@@ -270,3 +270,4 @@ int main()
   }
   return 0;
 }
+
