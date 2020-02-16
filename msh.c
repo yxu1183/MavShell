@@ -13,11 +13,11 @@
 #include <string.h>
 #include <signal.h>
 
-#define WHITESPACE " \t\n" /*                                                  \
-                              We want to split our command line up into tokens \
-                              so we need to define what delimits our tokens.   \
-                              In this case  white space                        \
-                              will separate the tokens on our command line     \
+#define WHITESPACE " \t\n" /*                                                  \ \ \ \ \
+                              We want to split our command line up into tokens \ \ \ \ \
+                              so we need to define what delimits our tokens.   \ \ \ \ \
+                              In this case  white space                        \ \ \ \ \
+                              will separate the tokens on our command line     \ \ \ \ \
                             */
 
 #define MAX_COMMAND_SIZE 255 // The maximum command-line size
@@ -154,7 +154,7 @@ int main()
       else
       {
         int row, column;
-        for (row = 0; row < MAX_HIST_COMMAND - 1; row++)
+        for (row = 0; row < MAX_HIST_COMMAND; row++)
         {
           for (column = 0; column < MAX_COMMAND_SIZE; column++)
           {
@@ -236,6 +236,8 @@ int main()
         */
         if (cmd_str[0] == '!')
         {
+          int subtract = 1;
+
           //Change the string "n" into integer n using atoi()
           int index = atoi(&cmd_str[1]);
 
@@ -253,10 +255,12 @@ int main()
           */
           else
           {
+            if (command_tracker >= MAX_HIST_COMMAND)
+              subtract = 2;
             int i = 0;
-            command_history[index - 1][strlen(command_history[index - 1]) - 1] = '\0';
+            command_history[index - subtract][strlen(command_history[index - subtract]) - 1] = '\0';
 
-            char *h = strtok(command_history[index - 1], " ");
+            char *h = strtok(command_history[index - subtract], " ");
             while (h != NULL)
             {
               history_token[i++] = h;
@@ -267,8 +271,8 @@ int main()
           //Print the history commands, till nth index.
           if (strcmp(history_token[0], "history") == 0)
           {
-            command_history[index - 1][strlen(command_history[index - 1])] = '\n';
-            print_history(command_tracker - 1, MAX_HIST_COMMAND - 1);
+            command_history[index - subtract][strlen(command_history[index - subtract])] = '\n';
+            print_history(command_tracker, MAX_HIST_COMMAND);
           }
 
           /*
@@ -332,21 +336,28 @@ int main()
       //We are in the parent process.
       else
       {
+
         /*
-          Update the pids array with the latest 15 process IDs
-          after fork() is called and child process is created.
-        */
-        int i = 0;
-        if (pids_tracker == MAX_PID_COMMAND)
+        Update the pids array with the latest 15 process IDs
+        after child process is created using fork(). 
+        After the commands hit 15,shift one position in array with new process ID.
+        Get rid of the old pid and add new pid into the array.
+      */
+
+        if (pids_tracker < MAX_PID_COMMAND)
         {
-          for (i = 0; i < (pids_tracker - 1); i++)
+          command_pid[pids_tracker] = pid;
+          pids_tracker++;
+        }
+        else
+        {
+          int i = 0;
+          for (i = 0; i < pids_tracker - 1; i++)
           {
             command_pid[i] = command_pid[i + 1];
           }
-          pids_tracker--;
+          command_pid[MAX_PID_COMMAND - 1] = pid;
         }
-        command_pid[pids_tracker] = pid;
-        pids_tracker++;
 
         //Wait and terminate only after child process terminates.
         int status;
