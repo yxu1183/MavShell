@@ -1,10 +1,12 @@
 /*
   Name: Yunika Upadhayaya
   ID: 1001631183
+  Assignment 1-(Mav Shell)
 */
 
 #define _GNU_SOURCE
 
+//Required Header files
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -12,12 +14,13 @@
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
+#include <stdbool.h>
 
-#define WHITESPACE " \t\n" /*                                                  \ \ \ \ \
-                              We want to split our command line up into tokens \ \ \ \ \
-                              so we need to define what delimits our tokens.   \ \ \ \ \
-                              In this case  white space                        \ \ \ \ \
-                              will separate the tokens on our command line     \ \ \ \ \
+#define WHITESPACE " \t\n" /*                                                  
+                              We want to split our command line up into tokens  
+                              so we need to define what delimits our tokens.    
+                              In this case  white space                         
+                              will separate the tokens on our command line.    
                             */
 
 #define MAX_COMMAND_SIZE 255 // The maximum command-line size
@@ -28,40 +31,37 @@
 
 #define MAX_PID_COMMAND 15 // The maximum showpids command tp list the PIDS
 
-//Declaring global variable for history and showpids functionality
+//2D array to store the input commands to print the history
 char command_history[MAX_HIST_COMMAND][MAX_COMMAND_SIZE];
+
+//Array to store the process IDs of the child process created
 int command_pid[MAX_PID_COMMAND];
-char *history_token[MAX_COMMAND_SIZE];
+
+//Counter variable to track the total input commands in history array
 int command_tracker = 0;
+
+//Counter variable to track the process IDs in pid array
 int pids_tracker = 0;
 
+//Boolean to check in prompting "msh>" to take the input
+bool allow_input = true;
+
 /*
-  print_history prints latest 15 commands from the history.
-  Takes in the total number of commands entered and max number of
-  history commands that needs to be printed as parameters.
+  print_history to print latest 15 commands from the history.
+  Takes in the total number of commands entered as a parameter.
   Returns nothing.
 */
-void print_history(int tracker, int command_number)
+void print_history(int tracker)
 {
   int i;
-  if (tracker < command_number)
+  for (i = 0; i < tracker; i++)
   {
-    for (i = 0; i < tracker; i++)
-    {
-      printf("%d: %s", i + 1, command_history[i]);
-    }
-  }
-  else
-  {
-    for (i = 0; i < command_number; i++)
-    {
-      printf("%d: %s", i + 1, command_history[i]);
-    }
+    printf("%d: %s", i + 1, command_history[i]);
   }
 }
 
 /*
-  print_pids prints latest 15 process IDs after
+  print_pids to print latest 15 process IDs after
   child process is created using fork().
   Takes in total number of commands entered in the
   child process as a parameter.
@@ -72,31 +72,38 @@ void print_pids(int tracker)
   int i;
   for (i = 0; i < tracker; i++)
   {
-    printf("%d: %d\n", i + 1, command_pid[i]);
+    printf("%d: %d\n", i+1, command_pid[i]);
   }
 }
 
 int main()
 {
-
+  //Varible declared to store in the input provided by the user
   char *cmd_str = (char *)malloc(MAX_COMMAND_SIZE);
 
-  pid_t pid;
-
+  //Run the loop until it is true
   while (1)
   {
-    // Print out the msh prompt
-    printf("msh> ");
-
     /*
-       Read the command from the commandline.  The
-       maximum command that will be read is MAX_COMMAND_SIZE
-       This while command will wait here until the user
-       inputs something since fgets returns NULL when there
-       is no input
+      Prompt to take the input until the boolean value is true.
+      Allow_input becomes false when we change the cmd_str later while executing
+      n!(history functionality), since we copy the command in nth index to cmd_str.
     */
-    while (!fgets(cmd_str, MAX_COMMAND_SIZE, stdin))
-      ;
+    if (allow_input)
+    {
+      // Print out the msh prompt
+      printf("msh> ");
+
+      /*
+        Read the command from the commandline.  The
+        maximum command that will be read is MAX_COMMAND_SIZE
+        This while command will wait here until the user
+        inputs something since fgets returns NULL when there
+        is no input.
+      */
+      while (!fgets(cmd_str, MAX_COMMAND_SIZE, stdin))
+        ;
+    }
 
     /* Parse input */
     char *token[MAX_NUM_ARGUMENTS];
@@ -104,19 +111,22 @@ int main()
     int token_count = 0;
 
     /*
-       Pointer to point to the token
-       parsed by strsep
+      Pointer to point to the token
+      parsed by strsep
     */
     char *arg_ptr;
 
     char *working_str = strdup(cmd_str);
 
     /*
-       we are going to move the working_str pointer so
-       keep track of its original value so we can deallocate
-       the correct amount at the end
+      We are going to move the working_str pointer so
+      keep track of its original value so we can deallocate
+      the correct amount at the end.
     */
     char *working_root = working_str;
+
+    //Reset allow_input to true to keep on prompting "msh>".
+    allow_input = true;
 
     // Tokenize the input stringswith whitespace used as the delimiter
     while (((arg_ptr = strsep(&working_str, WHITESPACE)) != NULL) &&
@@ -139,12 +149,14 @@ int main()
      ********************/
 
     /*
-      Copy the input commands into the history array except for NULL command.
+      Copy the input commands into the history array except for NULL command
+      and command which starts with '!', because when user enters !n, we 
+      copy the command in nth index later directly into cmd_str.
       Copy the first 15 commands as it is.
       After the commands hit 15, shift one position in array with new value.
       Get rid of the old command and add new command into the array.
     */
-    if (token[0] != NULL)
+    if (token[0] != NULL && cmd_str[0] != '!')
     {
       if (command_tracker < MAX_HIST_COMMAND)
       {
@@ -162,7 +174,6 @@ int main()
           }
         }
         strcpy(command_history[MAX_HIST_COMMAND - 1], cmd_str);
-        command_tracker++;
       }
     }
 
@@ -181,7 +192,7 @@ int main()
     */
     else if ((strcmp("quit", token[0]) == 0) || (strcmp("exit", token[0]) == 0))
     {
-      return 0;
+      _exit(1);
     }
 
     /*
@@ -190,7 +201,7 @@ int main()
     */
     else if (strcmp("history", token[0]) == 0)
     {
-      print_history(command_tracker, MAX_HIST_COMMAND);
+      print_history(command_tracker);
     }
 
     /*
@@ -215,9 +226,39 @@ int main()
       }
     }
 
-    //Create a child process using fork.
+    /*
+      Execute the "!n" history functionality.
+      Execute nth command in the history when entered !n.
+    */
+    else if (cmd_str[0] == '!')
+    {
+      //Change the string "n" into integer n using atoi()
+      int index = atoi(&cmd_str[1]);
+
+      //Only account for the history commands entered upto 15th index
+      if (index > command_tracker)
+      {
+        printf("Command not in history.\n");
+      }
+
+      /*
+        Copy the command in nth index into the original cmd_str 
+        and execute the command in same nth index.
+      */
+      strcpy(cmd_str, command_history[index - 1]);
+
+      /*
+        Set the value of allow_input to false, to stop prompting
+        msh, after we copy the command into cmd_str.
+      */
+      allow_input = false;
+      continue;
+    }
+
     else
     {
+      //Create a child process using fork.
+      pid_t pid;
       pid = fork();
 
       //Process was not created. fork() didn't work.
@@ -231,90 +272,6 @@ int main()
       else if (pid == 0)
       {
         /*
-          Execute the "!n" history functionality.
-          Execute nth command in the history when entered !n.
-        */
-        if (cmd_str[0] == '!')
-        {
-          int subtract = 1;
-
-          //Change the string "n" into integer n using atoi()
-          int index = atoi(&cmd_str[1]);
-
-          //Only account for the history commands entered upto 15th index
-          if (index > command_tracker - 1)
-          {
-            printf("Command not in history.\n");
-            fflush(NULL);
-            _exit(1);
-          }
-
-          /*
-            Tokenize the command in the nth index of the command history.
-            So, that we can pass it onto to the execv() to execute the command.
-          */
-          else
-          {
-            if (command_tracker >= MAX_HIST_COMMAND)
-              subtract = 2;
-            int i = 0;
-            command_history[index - subtract][strlen(command_history[index - subtract]) - 1] = '\0';
-
-            char *h = strtok(command_history[index - subtract], " ");
-            while (h != NULL)
-            {
-              history_token[i++] = h;
-              h = strtok(NULL, " ");
-            }
-          }
-
-          //Print the history commands, till nth index.
-          if (strcmp(history_token[0], "history") == 0)
-          {
-            command_history[index - subtract][strlen(command_history[index - subtract])] = '\n';
-            print_history(command_tracker, MAX_HIST_COMMAND);
-          }
-
-          /*
-            Execute chdir(), to change the directory (cd) for nth index.
-            Does not execute "cd ~".
-            If no directory found, print otherwise.
-          */
-          else if (strcmp(history_token[0], "cd") == 0)
-          {
-            if (chdir(history_token[1]) == -1)
-            {
-              printf("%s: Directory not found.\n", history_token[1]);
-            }
-          }
-
-          //Print the latest process IDs, till nth index.
-          else if (strcmp(history_token[0], "showpids") == 0)
-          {
-            print_pids(pids_tracker);
-          }
-
-          /*
-            Supports and executes commands entered in nth index.
-            Searches in the following path order:
-            Current working directory
-            /usr/local/bin
-            /usr/bin
-            /bin
-          */
-          else
-          {
-            int ret;
-            ret = execvp(history_token[0], history_token);
-            if (ret == -1)
-            {
-              printf("%s: Command not found.\n", history_token[0]);
-            }
-          }
-          fflush(NULL);
-          _exit(1);
-        }
-        /*
           Executes shell supporting commands entered.
           Searches in the following path order:
           Current working directory
@@ -322,28 +279,24 @@ int main()
           /usr/bin
           /bin
         */
-        else
+        int ret = execvp(token[0], token);
+        if (ret == -1)
         {
-          int ret = execvp(token[0], token);
-          if (ret == -1)
-          {
-            printf("%s: Command not found.\n", token[0]);
-          }
-          fflush(NULL);
-          _exit(1);
+          printf("%s: Command not found.\n", token[0]);
         }
+        //Exit child process before the parent process.
+        exit(1);
       }
+
       //We are in the parent process.
       else
       {
-
         /*
-        Update the pids array with the latest 15 process IDs
-        after child process is created using fork(). 
-        After the commands hit 15,shift one position in array with new process ID.
-        Get rid of the old pid and add new pid into the array.
-      */
-
+          Update the pids array with the latest 15 process IDs
+          after child process is created using fork(). 
+          After the commands hit 15,shift one position in array with new process ID.
+          Get rid of the old pid and add new pid into the array.
+        */
         if (pids_tracker < MAX_PID_COMMAND)
         {
           command_pid[pids_tracker] = pid;
@@ -361,7 +314,7 @@ int main()
 
         //Wait and terminate only after child process terminates.
         int status;
-        wait(&status);
+        waitpid(pid, &status, 0);
       }
     }
     /*
