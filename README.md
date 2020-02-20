@@ -11,15 +11,15 @@ A shell program - Mav shell (msh), similar to bourne shell (bash), c-shell (csh)
 * Executes any command from history. Typing !n, where n is a number between 1 and 15 will result in re-running the nth command in shell.
 
 ## Files Included
-* [msh.c] (https://github.com/yxu1183/CSE-3320-MavShell/blob/master/msh.c) - Main source code which executes the main program (Mav Shell).
-* [fork.c] (https://github.com/yxu1183/CSE-3320-MavShell/blob/master/fork.c)- Code which demonstrates the basic concept used in the main source code.
-* [zombie.c] (https://github.com/yxu1183/CSE-3320-MavShell/blob/master/zombie.c) - Code which demonstrates the possible error that might occur while executing fork function.
+* [msh.c](https://github.com/yxu1183/CSE-3320-MavShell/blob/master/msh.c) - Main source code which executes the main program (Mav Shell).
+* [fork.c](https://github.com/yxu1183/CSE-3320-MavShell/blob/master/fork.c)- Code which demonstrates the basic concept used in the main source code.
+* [zombie.c](https://github.com/yxu1183/CSE-3320-MavShell/blob/master/zombie.c) - Code which demonstrates the possible error that might occur while executing fork function.
 
 ## Things I Learned
 * Shell commands and functionalities in UNIX systems.
 * Use of fork to handle multiple processes at a time.
 
 ## Acknowledgements
-Dr. Trevor Bakker for providing a small stub [programs] (https://github.com/CSE3320/Shell-Assignment) to get started on the assignment.
+Dr. Trevor Bakker for providing a small stub [programs](https://github.com/CSE3320/Shell-Assignment) to get started on the assignment.
 
 
