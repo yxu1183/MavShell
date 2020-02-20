@@ -20,6 +20,6 @@ A shell program - Mav shell (msh), similar to bourne shell (bash), c-shell (csh)
 * Use of fork to handle multiple processes at a time.
 
 ## Acknowledgements
-[Dr. Trevor Bakker](https://github.com/trevorbakker-uta)for providing a small stub [programs](https://github.com/CSE3320/Shell-Assignment) to get started on the assignment.
+[Dr. Trevor Bakker](https://github.com/trevorbakker-uta) for providing a small stub [programs](https://github.com/CSE3320/Shell-Assignment) to get started on the assignment.
 
 
